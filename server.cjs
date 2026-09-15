@@ -159,6 +159,35 @@ app.post("/api/todos", async (req, res) => {
         error: "Todo 제목이 필요합니다.",
       });
     }
+app.get("/api/todos", async (req, res) => {
+  try {
+    const userId = req.query.userId || "hyesol";
+
+    const { resources } = await container.items
+      .query({
+        query: "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC",
+        parameters: [
+          {
+            name: "@userId",
+            value: userId,
+          },
+        ],
+      })
+      .fetchAll();
+
+    res.json({
+      success: true,
+      todos: resources,
+    });
+  } catch (error) {
+    console.error("Todo 불러오기 오류:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 
     const todo = {
       id: Date.now().toString(),
