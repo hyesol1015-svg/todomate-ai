@@ -3,10 +3,19 @@ const cors = require("cors");
 require("dotenv").config();
 
 const { GoogleGenAI } = require("@google/genai");
+const { CosmosClient } = require("@azure/cosmos");
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
+
+const cosmosClient = new CosmosClient({
+  endpoint: process.env.COSMOS_ENDPOINT,
+  key: process.env.COSMOS_KEY,
+});
+
+const database = cosmosClient.database(process.env.COSMOS_DATABASE);
+const container = database.container(process.env.COSMOS_CONTAINER);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,7 +34,7 @@ app.get("/", (req, res) => {
 app.get("/test-ai", async (req, res) => {
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: "TodoMate AI 테스트입니다. 한국어로 한 문장만 답해주세요.",
     });
 
@@ -96,7 +105,7 @@ ${todoText}
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -111,6 +120,63 @@ ${todoText}
     });
   } catch (error) {
     console.error("AI 계획 생성 오류:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/db-test", async (req, res) => {
+  try {
+    const { resources } = await container.items
+      .query("SELECT TOP 1 * FROM c")
+      .fetchAll();
+
+    res.json({
+      success: true,
+      message: "Cosmos DB 연결 성공!",
+      data: resources,
+    });
+  } catch (error) {
+    console.error("Cosmos DB 오류:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+app.post("/api/todos", async (req, res) => {
+  try {
+    const { title, userId = "hyesol" } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Todo 제목이 필요합니다.",
+      });
+    }
+
+    const todo = {
+      id: Date.now().toString(),
+      userId,
+      title: title.trim(),
+      completed: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const { resource } = await container.items.create(todo);
+
+    res.json({
+      success: true,
+      todo: resource,
+    });
+  } catch (error) {
+    console.error("Todo 저장 오류:", error);
 
     res.status(500).json({
       success: false,
