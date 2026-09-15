@@ -5,9 +5,17 @@ require("dotenv").config();
 const { GoogleGenAI } = require("@google/genai");
 const { CosmosClient } = require("@azure/cosmos");
 
+// ==============================
+// AI 설정
+// ==============================
+
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
+
+// ==============================
+// Cosmos DB 설정
+// ==============================
 
 const cosmosClient = new CosmosClient({
   endpoint: process.env.COSMOS_ENDPOINT,
@@ -17,20 +25,30 @@ const cosmosClient = new CosmosClient({
 const database = cosmosClient.database(process.env.COSMOS_DATABASE);
 const container = database.container(process.env.COSMOS_CONTAINER);
 
+// ==============================
+// Express 설정
+// ==============================
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
+// ==============================
 // 서버 확인
+// ==============================
+
 app.get("/", (req, res) => {
   res.json({
     message: "TodoMate AI 서버가 정상적으로 실행되고 있습니다.",
   });
 });
 
+// ==============================
 // Gemini 연결 확인
+// ==============================
+
 app.get("/test-ai", async (req, res) => {
   try {
     const response = await ai.models.generateContent({
@@ -52,7 +70,10 @@ app.get("/test-ai", async (req, res) => {
   }
 });
 
+// ==============================
 // Todo → AI 계획 생성
+// ==============================
+
 app.post("/api/plan", async (req, res) => {
   try {
     const { todos } = req.body;
@@ -128,6 +149,10 @@ ${todoText}
   }
 });
 
+// ==============================
+// Cosmos DB 연결 확인
+// ==============================
+
 app.get("/api/db-test", async (req, res) => {
   try {
     const { resources } = await container.items
@@ -149,6 +174,10 @@ app.get("/api/db-test", async (req, res) => {
   }
 });
 
+// ==============================
+// Todo 저장
+// ==============================
+
 app.post("/api/todos", async (req, res) => {
   try {
     const { title, userId = "hyesol" } = req.body;
@@ -159,35 +188,6 @@ app.post("/api/todos", async (req, res) => {
         error: "Todo 제목이 필요합니다.",
       });
     }
-app.get("/api/todos", async (req, res) => {
-  try {
-    const userId = req.query.userId || "hyesol";
-
-    const { resources } = await container.items
-      .query({
-        query: "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC",
-        parameters: [
-          {
-            name: "@userId",
-            value: userId,
-          },
-        ],
-      })
-      .fetchAll();
-
-    res.json({
-      success: true,
-      todos: resources,
-    });
-  } catch (error) {
-    console.error("Todo 불러오기 오류:", error);
-
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
 
     const todo = {
       id: Date.now().toString(),
@@ -213,6 +213,45 @@ app.get("/api/todos", async (req, res) => {
     });
   }
 });
+
+// ==============================
+// Todo 목록 불러오기
+// ==============================
+
+app.get("/api/todos", async (req, res) => {
+  try {
+    const userId = req.query.userId || "hyesol";
+
+    const { resources } = await container.items
+      .query({
+        query:
+          "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC",
+        parameters: [
+          {
+            name: "@userId",
+            value: userId,
+          },
+        ],
+      })
+      .fetchAll();
+
+    res.json({
+      success: true,
+      todos: resources,
+    });
+  } catch (error) {
+    console.error("Todo 불러오기 오류:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ==============================
+// 서버 실행
+// ==============================
 
 app.listen(PORT, () => {
   console.log(`TodoMate AI server running on port ${PORT}`);
