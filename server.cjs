@@ -9,7 +9,7 @@ const ai = new GoogleGenAI({
 });
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -120,5 +120,5 @@ ${todoText}
 });
 
 app.listen(PORT, () => {
-  console.log(`TodoMate AI server: http://localhost:${PORT}`);
+  console.log(`TodoMate AI server running on port ${PORT}`);
 });
