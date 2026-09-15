@@ -58,7 +58,7 @@ function App() {
     setShowAiPlan(true)
 
     try {
-      const response = await fetch('http://localhost:3001/api/plan', {
+      const response = await fetch('https://todomate-ai-api-hyesol-emekgganfnpbtgt.eastasia-01.azurewebsites.net/api/plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
