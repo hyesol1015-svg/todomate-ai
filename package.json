@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.cjs"
+
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
