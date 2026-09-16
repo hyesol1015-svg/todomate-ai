@@ -1,13 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 function App() {
-  const [todos, setTodos] = useState([
-    { id: 1, text: '중앙아시아 경제학 3장 공부', completed: false },
-    { id: 2, text: '발표 PPT 5페이지 수정', completed: false },
-    { id: 3, text: '일본어 리뷰 문구 작성', completed: true },
-    { id: 4, text: '영어 단어 30개', completed: false },
-  ])
+  const [todos, setTodos] = useState([])
+
+  useEffect(() => {
+    const fetchTodos = async () => {
+      try {
+        const response = await fetch(
+          'https://todomate-ai-api-hyesol-emekgganfnpbtgt.eastasia-01.azurewebsites.net/api/todos'
+        )
+
+        const data = await response.json()
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Todo를 불러오지 못했습니다.')
+        }
+
+        setTodos(data.todos || [])
+      } catch (error) {
+        console.error('Todo 불러오기 오류:', error)
+      }
+    }
+
+    fetchTodos()
+  }, [])
 
   const [newTodo, setNewTodo] = useState('')
   const [showAiPlan, setShowAiPlan] = useState(false)
